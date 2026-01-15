@@ -15,6 +15,11 @@ const getPets = async (req, res, next) => {
 //! POST
 const postPet = async (req, res, next) => {
   try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ message: 'Image file is required (form-data)' });
+    }
     const newPet = new Pet(req.body);
     if (req.file) {
       newPet.photo = req.file.path;
@@ -24,11 +29,9 @@ const postPet = async (req, res, next) => {
     return res.status(201).json(petPopulated);
   } catch (error) {
     console.error('Error in postPet:', error);
-    return res
-      .status(400)
-      .json({
-        message: 'Failed to create pet. Please verify the provided data.',
-      });
+    return res.status(400).json({
+      message: 'Failed to create pet. Please verify the provided data.',
+    });
   }
 };
 
@@ -62,11 +65,9 @@ const updatePet = async (req, res, next) => {
     return res.status(200).json(updatedPet);
   } catch (error) {
     console.error('Error in updatePet:', error);
-    return res
-      .status(400)
-      .json({
-        message: 'Failed to update pet. Please verify the provided data.',
-      });
+    return res.status(400).json({
+      message: 'Failed to update pet. Please verify the provided data.',
+    });
   }
 };
 
@@ -75,7 +76,11 @@ const deletePet = async (req, res, next) => {
   try {
     const { id } = req.params;
     const petDeleted = await Pet.findByIdAndDelete(id);
-    deleteFile(petDeleted.photo);
+    //deleteFile(petDeleted.photo);
+    if (!petDeleted) {
+      return res.status(404).json({ message: 'Pet not found' });
+    }
+    if (petDeleted.photo) deleteFile(petDeleted.photo);
     return res.status(200).json({
       message: 'Pet deleted',
       petDeleted,

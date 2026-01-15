@@ -15,19 +15,20 @@ const getOwners = async (req, res, next) => {
 //! POST
 const postOwner = async (req, res, next) => {
   try {
-    const newOwner = new Owner(req.body);
-    if (req.file) {
-      newOwner.avatar = req.file.path;
+    if (!req.file) {
+      return res.status(400).json({ message: 'Image file is required (form-data)' });
     }
+    const newOwner = new Owner({ ...req.body, avatar: req.file.path });
+    //if (req.file) {
+      //newOwner.avatar = req.file.path;}
+    
     const ownerSaved = await newOwner.save();
     return res.status(201).json(ownerSaved);
   } catch (error) {
     console.error('Error in postOwner:', error);
-    return res
-      .status(400)
-      .json({
-        message: 'Failed to create owner. Please verify the provided data.',
-      });
+    return res.status(400).json({
+      message: 'Failed to create owner. Please verify the provided data.',
+    });
   }
 };
 
@@ -61,11 +62,9 @@ const updateOwner = async (req, res, next) => {
     return res.status(200).json(updatedOwner);
   } catch (error) {
     console.error('Error in updateOwner:', error);
-    return res
-      .status(400)
-      .json({
-        message: 'Failed to update owner. Please verify the provided data.',
-      });
+    return res.status(400).json({
+      message: 'Failed to update owner. Please verify the provided data.',
+    });
   }
 };
 
@@ -74,7 +73,11 @@ const deleteOwner = async (req, res, next) => {
   try {
     const { id } = req.params;
     const ownerDeleted = await Owner.findByIdAndDelete(id);
-    deleteFile(ownerDeleted.avatar);
+    //deleteFile(ownerDeleted.avatar);
+    if (!ownerDeleted) {
+      return res.status(404).json({ message: 'Owner not found' });
+    }
+    if (ownerDeleted.avatar) deleteFile(ownerDeleted.avatar);
     return res.status(200).json({
       message: 'Owner deleted',
       ownerDeleted,

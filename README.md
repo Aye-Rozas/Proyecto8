@@ -21,14 +21,15 @@ Insomnia
 ```sh
 npm run seed 
 ```
-La función realiza dos acciones principales:
-Limpia la colección “pets”
-Inserta los datos definidos en el archivo seedPet.js
+La función realiza estas acciones:
+Actualiza las mascotas si ya existen (según el campo name)
+Crea las mascotas si no existen
+Usa operadores de MongoDB ($set + upsert: true)
+Evita reemplazar todos los datos de la colección
 
 Logs esperados:
 Conectado: Connected to MongoDB
-Limpieza: Collection 'pets' cleared (solo si existía contenido previo)
-Inserción: X pets inserted
+Inserción:Pets inserted or updated successfully
 La semilla utiliza el modelo Pet y la colección configurada como ‘pets’.
 
 2)Requisito previo: existencia de un Owner
@@ -59,7 +60,27 @@ const storage = new CloudinaryStorage({
 });
 ```
 *Eliminación de archivos en Cloudinary*
-Cuando se elimina/actualiza un Owner o un Pet, también se elimina su imagen mediante deleteFile().
+Cuando se elimina/actualiza un Owner o un Pet, también se elimina su imagen anterior mediante en Cloudinary.
+
+deleteFile().
+Recibe la URL completa
+Extrae el public_id
+Llama a cloudinary.uploader.destroy()
+Evita archivos huérfanos en Cloudinary
+
+**Configuración de Cloudinary**
+La configuración se encuentra en:
+```sh
+src/config/cloudinary.js
+```
+
+Y se invoca en index.js:
+```sh
+const { connectCloudinary } = require("./src/config/cloudinary");
+connectCloudinary();
+```
+
+Esto mantiene el código más limpio y escalable.
 
 **ENDPOINTS – OWNER**
 
@@ -150,4 +171,8 @@ Elimina la mascota y su imagen asociada en Cloudinary.
 
 ***Notas importantes***
 Todas las peticiones POST y PUT con imágenes deben enviarse como multipart/form-data.
-
+Si no se envía archivo, la API devuelve un error 400.
+Las imágenes se gestionan completamente en Cloudinary (subida y eliminación).
+Para evitar conflictos entre versiones (especialmente entre cloudinary y multer-storage-cloudinary), el proyecto utiliza versiones compatibles y estables:
+cloudinary@1.37.2
+multer-storage-cloudinary@4.0.0
